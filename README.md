@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
 
-A real-time collaborative whiteboard application that allows multiple users to draw, design, and communicate simultaneously. Built with React, Fabric.js, Socket.io, Node.js, Express, and MongoDB.
+A real time collaborative whiteboard application that allows multiple users to draw, design, and communicate simultaneously. Built with React, Fabric.js, Socket.io, Node.js, Express, and MongoDB.
 
 ![Collaborative Whiteboard Demo](https://via.placeholder.com/800x400?text=Collaborative+Whiteboard+Demo)
 
@@ -65,7 +65,7 @@ A real-time collaborative whiteboard application that allows multiple users to d
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/collaborative-whiteboard.git
+   git clone https://github.com/rashed9810/CollabCanvas-App.git
    cd collaborative-whiteboard
    ```
 
