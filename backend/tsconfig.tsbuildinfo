@@ -1,0 +1,1 @@
+{"root":["./src/server.ts","./src/controllers/usercontroller.ts","./src/controllers/whiteboardcontroller.ts","./src/middleware/auth.ts","./src/models/user.ts","./src/models/whiteboard.ts","./src/routes/userroutes.ts","./src/routes/whiteboardroutes.ts","./src/services/socketservice.ts","./src/utils/jwt.ts"],"errors":true,"version":"5.8.3"}

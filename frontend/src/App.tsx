@@ -35,50 +35,19 @@ const App: React.FC = () => {
         <Router>
           <div className="min-h-screen flex flex-col bg-gray-50">
             <Navbar />
-            <div className="container mx-auto px-4 py-8">
-              <h1 className="text-4xl font-bold text-primary">
-                Welcome to our Collaborative Whiteboard
-              </h1>
-            </div>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route
-                path="/login"
-                element={
-                  <ContentWrapper>
-                    <LoginPage />
-                  </ContentWrapper>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <ContentWrapper>
-                    <RegisterPage />
-                  </ContentWrapper>
-                }
-              />
+            <ContentWrapper>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ContentWrapper>
-                      <DashboardPage />
-                    </ContentWrapper>
-                  }
-                />
-                <Route
-                  path="/whiteboard/:id"
-                  element={
-                    <ContentWrapper>
-                      <WhiteboardPage />
-                    </ContentWrapper>
-                  }
-                />
-              </Route>
-            </Routes>
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/whiteboard/:id" element={<WhiteboardPage />} />
+                </Route>
+              </Routes>
+            </ContentWrapper>
           </div>
         </Router>
       </WhiteboardProvider>

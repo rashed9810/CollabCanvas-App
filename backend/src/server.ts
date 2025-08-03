@@ -20,7 +20,11 @@ const server = http.createServer(app);
 const allowedOrigins =
   process.env.NODE_ENV === "production"
     ? [process.env.FRONTEND_URL || "https://your-production-domain.com"]
-    : ["http://localhost:5173", "http://localhost:3000"];
+    : [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:3002",
+      ];
 
 // Configure Socket.io
 const io = new Server(server, {
@@ -63,7 +67,7 @@ const connectDB = async () => {
     if (error instanceof Error) {
       console.error(`Error: ${error.message}`);
     } else {
-      console.error('An unknown error occurred');
+      console.error("An unknown error occurred");
     }
     process.exit(1);
   }
@@ -104,11 +108,23 @@ app.use(
 setupSocketHandlers(io);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(
       `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
     );
+  });
+
+  server.on("error", (error) => {
+    if ((error as any).code === "EADDRINUSE") {
+      console.error(
+        `Port ${PORT} is already in use. Please use a different port.`
+      );
+      process.exit(1);
+    } else {
+      console.error("Server error:", error);
+      process.exit(1);
+    }
   });
 });

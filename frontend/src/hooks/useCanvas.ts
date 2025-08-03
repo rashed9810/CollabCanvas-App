@@ -46,6 +46,41 @@ const useCanvas = ({
   const [canSaveToHistory, setCanSaveToHistory] = useState(true);
   const historyLimitRef = useRef(30); // Maximum number of history states to keep
 
+  // Save current canvas state to history
+  const saveToHistory = useCallback(() => {
+    if (!canvasRef.current || !canSaveToHistory) return;
+
+    const canvas = canvasRef.current;
+    const currentState = JSON.stringify(canvas.toJSON(["data"]));
+
+    // If we're not at the end of the history, remove future states
+    if (historyIndex < history.length - 1) {
+      setHistory((prev) => prev.slice(0, historyIndex + 1));
+    }
+
+    // Add new state to history
+    setHistory((prev) => {
+      const newHistory = [
+        ...prev,
+        { canvasState: currentState, timestamp: Date.now() },
+      ];
+
+      // Limit history size
+      if (newHistory.length > historyLimitRef.current) {
+        return newHistory.slice(newHistory.length - historyLimitRef.current);
+      }
+
+      return newHistory;
+    });
+
+    setHistoryIndex((prev) => {
+      const newIndex = prev + 1;
+      return newIndex >= historyLimitRef.current
+        ? historyLimitRef.current - 1
+        : newIndex;
+    });
+  }, [canSaveToHistory, history, historyIndex]);
+
   // Initialize canvas
   useEffect(() => {
     if (!containerRef.current) return;
@@ -547,41 +582,6 @@ const useCanvas = ({
     },
     []
   );
-
-  // Save current canvas state to history
-  const saveToHistory = useCallback(() => {
-    if (!canvasRef.current || !canSaveToHistory) return;
-
-    const canvas = canvasRef.current;
-    const currentState = JSON.stringify(canvas.toJSON(["data"]));
-
-    // If we're not at the end of the history, remove future states
-    if (historyIndex < history.length - 1) {
-      setHistory((prev) => prev.slice(0, historyIndex + 1));
-    }
-
-    // Add new state to history
-    setHistory((prev) => {
-      const newHistory = [
-        ...prev,
-        { canvasState: currentState, timestamp: Date.now() },
-      ];
-
-      // Limit history size
-      if (newHistory.length > historyLimitRef.current) {
-        return newHistory.slice(newHistory.length - historyLimitRef.current);
-      }
-
-      return newHistory;
-    });
-
-    setHistoryIndex((prev) => {
-      const newIndex = prev + 1;
-      return newIndex >= historyLimitRef.current
-        ? historyLimitRef.current - 1
-        : newIndex;
-    });
-  }, [canSaveToHistory, history, historyIndex]);
 
   // Undo function
   const undo = useCallback(() => {

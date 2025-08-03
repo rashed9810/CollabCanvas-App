@@ -113,8 +113,37 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.message || "Something went wrong";
+    // Log detailed error information for debugging
+    console.error("API Error Details:", {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method,
+      data: error.response?.data,
+      stack: error.stack,
+    });
+
+    // Custom handling for resource exhaustion
+    if (error.message?.includes('ERR_INSUFFICIENT_RESOURCES') || error.code === 'ERR_INSUFFICIENT_RESOURCES') {
+      alert("Your system is low on resources. Please close unused tabs/apps and restart your computer if needed.");
+      return Promise.reject(error);
+    }
+
+    const message = error.response?.data?.message || error.message || "Something went wrong";
     console.error("API Error:", message);
+
+    // If we get a 429 (Too Many Requests) or network error, add a delay before retrying (but not for resource exhaustion)
+    if ((error.code === "ERR_NETWORK" || error.response?.status === 429) && error.code !== 'ERR_INSUFFICIENT_RESOURCES') {
+      // Add a delay to prevent rapid retries
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          reject(error);
+        }, 1000); // 1 second delay
+      });
+    }
+
     return Promise.reject(error);
   }
 );

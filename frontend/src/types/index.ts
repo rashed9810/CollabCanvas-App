@@ -21,7 +21,7 @@ export interface Whiteboard {
 // Canvas object types
 export interface CanvasObject {
   id: string;
-  type: 'rect' | 'circle' | 'path' | 'text' | 'image';
+  type: "rect" | "circle" | "path" | "text" | "image";
   left: number;
   top: number;
   width?: number;
@@ -42,7 +42,7 @@ export interface DrawEvent {
   userId: string;
   userName: string;
   objectData: any;
-  action: 'add' | 'modify' | 'remove';
+  action: "add" | "modify" | "remove";
 }
 
 // Cursor position type
@@ -74,6 +74,7 @@ export interface WhiteboardState {
   currentWhiteboard: Whiteboard | null;
   loading: boolean;
   error: string | null;
+  lastFetchTime?: number; // Track last fetch time to prevent excessive requests
 }
 
 export interface WhiteboardContextType extends WhiteboardState {

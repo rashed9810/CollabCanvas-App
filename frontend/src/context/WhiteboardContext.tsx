@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useReducer } from 'react';
-import { WhiteboardState, WhiteboardContextType, Whiteboard } from '../types';
-import { whiteboardAPI } from '../services/api';
+import React, { createContext, useContext, useReducer, useRef } from "react";
+import { WhiteboardState, WhiteboardContextType, Whiteboard } from "../types";
+import { whiteboardAPI } from "../services/api";
 
 // Initial state
 const initialState: WhiteboardState = {
@@ -12,33 +12,36 @@ const initialState: WhiteboardState = {
 
 // Action types
 type WhiteboardAction =
-  | { type: 'GET_WHITEBOARDS_SUCCESS'; payload: Whiteboard[] }
-  | { type: 'GET_WHITEBOARD_SUCCESS'; payload: Whiteboard }
-  | { type: 'CREATE_WHITEBOARD_SUCCESS'; payload: Whiteboard }
-  | { type: 'UPDATE_WHITEBOARD_SUCCESS'; payload: Whiteboard }
-  | { type: 'DELETE_WHITEBOARD_SUCCESS'; payload: string }
-  | { type: 'WHITEBOARD_ERROR'; payload: string }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'SET_LOADING'; payload: boolean };
+  | { type: "GET_WHITEBOARDS_SUCCESS"; payload: Whiteboard[] }
+  | { type: "GET_WHITEBOARD_SUCCESS"; payload: Whiteboard }
+  | { type: "CREATE_WHITEBOARD_SUCCESS"; payload: Whiteboard }
+  | { type: "UPDATE_WHITEBOARD_SUCCESS"; payload: Whiteboard }
+  | { type: "DELETE_WHITEBOARD_SUCCESS"; payload: string }
+  | { type: "WHITEBOARD_ERROR"; payload: string }
+  | { type: "CLEAR_ERROR" }
+  | { type: "SET_LOADING"; payload: boolean };
 
 // Reducer
-const whiteboardReducer = (state: WhiteboardState, action: WhiteboardAction): WhiteboardState => {
+const whiteboardReducer = (
+  state: WhiteboardState,
+  action: WhiteboardAction
+): WhiteboardState => {
   switch (action.type) {
-    case 'GET_WHITEBOARDS_SUCCESS':
+    case "GET_WHITEBOARDS_SUCCESS":
       return {
         ...state,
         whiteboards: action.payload,
         loading: false,
         error: null,
       };
-    case 'GET_WHITEBOARD_SUCCESS':
+    case "GET_WHITEBOARD_SUCCESS":
       return {
         ...state,
         currentWhiteboard: action.payload,
         loading: false,
         error: null,
       };
-    case 'CREATE_WHITEBOARD_SUCCESS':
+    case "CREATE_WHITEBOARD_SUCCESS":
       return {
         ...state,
         whiteboards: [...state.whiteboards, action.payload],
@@ -46,7 +49,7 @@ const whiteboardReducer = (state: WhiteboardState, action: WhiteboardAction): Wh
         loading: false,
         error: null,
       };
-    case 'UPDATE_WHITEBOARD_SUCCESS':
+    case "UPDATE_WHITEBOARD_SUCCESS":
       return {
         ...state,
         whiteboards: state.whiteboards.map((wb) =>
@@ -59,27 +62,31 @@ const whiteboardReducer = (state: WhiteboardState, action: WhiteboardAction): Wh
         loading: false,
         error: null,
       };
-    case 'DELETE_WHITEBOARD_SUCCESS':
+    case "DELETE_WHITEBOARD_SUCCESS":
       return {
         ...state,
-        whiteboards: state.whiteboards.filter((wb) => wb._id !== action.payload),
+        whiteboards: state.whiteboards.filter(
+          (wb) => wb._id !== action.payload
+        ),
         currentWhiteboard:
-          state.currentWhiteboard?._id === action.payload ? null : state.currentWhiteboard,
+          state.currentWhiteboard?._id === action.payload
+            ? null
+            : state.currentWhiteboard,
         loading: false,
         error: null,
       };
-    case 'WHITEBOARD_ERROR':
+    case "WHITEBOARD_ERROR":
       return {
         ...state,
         loading: false,
         error: action.payload,
       };
-    case 'CLEAR_ERROR':
+    case "CLEAR_ERROR":
       return {
         ...state,
         error: null,
       };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return {
         ...state,
         loading: action.payload,
@@ -90,46 +97,86 @@ const whiteboardReducer = (state: WhiteboardState, action: WhiteboardAction): Wh
 };
 
 // Create context
-const WhiteboardContext = createContext<WhiteboardContextType | undefined>(undefined);
+const WhiteboardContext = createContext<WhiteboardContextType | undefined>(
+  undefined
+);
 
 // Provider component
-export const WhiteboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const WhiteboardProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [state, dispatch] = useReducer(whiteboardReducer, initialState);
+  const errorRetryCount = useRef(0);
+  const maxRetries = 3;
+  const lastFetchTime = useRef(0);
+  const minFetchInterval = 1000; // Minimum 1 second between fetches
 
-  // Get all whiteboards
+  // Get all whiteboards with error handling to prevent infinite loops
   const getWhiteboards = async () => {
+    const now = Date.now();
+
+    // Prevent too frequent requests
+    if (now - lastFetchTime.current < minFetchInterval) {
+      console.warn("Skipping whiteboard fetch to prevent excessive requests");
+      return;
+    }
+
+    // Update last fetch time
+    lastFetchTime.current = now;
+
+    // Prevent infinite retry loops
+    if (errorRetryCount.current >= maxRetries) {
+      console.error("Maximum retry attempts reached for fetching whiteboards");
+      dispatch({
+        type: "WHITEBOARD_ERROR",
+        payload:
+          "Unable to fetch whiteboards after multiple attempts. Please refresh the page.",
+      });
+      return;
+    }
+
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       const whiteboards = await whiteboardAPI.getWhiteboards();
-      dispatch({ type: 'GET_WHITEBOARDS_SUCCESS', payload: whiteboards });
+      // Reset error retry count on successful fetch
+      errorRetryCount.current = 0;
+      dispatch({ type: "GET_WHITEBOARDS_SUCCESS", payload: whiteboards });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to fetch whiteboards';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      errorRetryCount.current += 1;
+      const message =
+        error.response?.data?.message || "Failed to fetch whiteboards";
+      console.error(
+        `Whiteboard fetch error (${errorRetryCount.current}/${maxRetries}):`,
+        error
+      );
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
     }
   };
 
   // Get whiteboard by ID
   const getWhiteboard = async (id: string) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       const whiteboard = await whiteboardAPI.getWhiteboard(id);
-      dispatch({ type: 'GET_WHITEBOARD_SUCCESS', payload: whiteboard });
+      dispatch({ type: "GET_WHITEBOARD_SUCCESS", payload: whiteboard });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to fetch whiteboard';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      const message =
+        error.response?.data?.message || "Failed to fetch whiteboard";
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
     }
   };
 
   // Create new whiteboard
   const createWhiteboard = async (name: string, isPublic: boolean) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       const whiteboard = await whiteboardAPI.createWhiteboard(name, isPublic);
-      dispatch({ type: 'CREATE_WHITEBOARD_SUCCESS', payload: whiteboard });
+      dispatch({ type: "CREATE_WHITEBOARD_SUCCESS", payload: whiteboard });
       return whiteboard;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to create whiteboard';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      const message =
+        error.response?.data?.message || "Failed to create whiteboard";
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
       throw error;
     }
   };
@@ -137,54 +184,65 @@ export const WhiteboardProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Update whiteboard
   const updateWhiteboard = async (id: string, data: Partial<Whiteboard>) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       const whiteboard = await whiteboardAPI.updateWhiteboard(id, data);
-      dispatch({ type: 'UPDATE_WHITEBOARD_SUCCESS', payload: whiteboard });
+      dispatch({ type: "UPDATE_WHITEBOARD_SUCCESS", payload: whiteboard });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to update whiteboard';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      const message =
+        error.response?.data?.message || "Failed to update whiteboard";
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
     }
   };
 
   // Delete whiteboard
   const deleteWhiteboard = async (id: string) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       await whiteboardAPI.deleteWhiteboard(id);
-      dispatch({ type: 'DELETE_WHITEBOARD_SUCCESS', payload: id });
+      dispatch({ type: "DELETE_WHITEBOARD_SUCCESS", payload: id });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to delete whiteboard';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      const message =
+        error.response?.data?.message || "Failed to delete whiteboard";
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
     }
   };
 
   // Add collaborator
   const addCollaborator = async (whiteboardId: string, userId: string) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const whiteboard = await whiteboardAPI.addCollaborator(whiteboardId, userId);
-      dispatch({ type: 'UPDATE_WHITEBOARD_SUCCESS', payload: whiteboard });
+      dispatch({ type: "SET_LOADING", payload: true });
+      const whiteboard = await whiteboardAPI.addCollaborator(
+        whiteboardId,
+        userId
+      );
+      dispatch({ type: "UPDATE_WHITEBOARD_SUCCESS", payload: whiteboard });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to add collaborator';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      const message =
+        error.response?.data?.message || "Failed to add collaborator";
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
     }
   };
 
   // Remove collaborator
   const removeCollaborator = async (whiteboardId: string, userId: string) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const whiteboard = await whiteboardAPI.removeCollaborator(whiteboardId, userId);
-      dispatch({ type: 'UPDATE_WHITEBOARD_SUCCESS', payload: whiteboard });
+      dispatch({ type: "SET_LOADING", payload: true });
+      const whiteboard = await whiteboardAPI.removeCollaborator(
+        whiteboardId,
+        userId
+      );
+      dispatch({ type: "UPDATE_WHITEBOARD_SUCCESS", payload: whiteboard });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to remove collaborator';
-      dispatch({ type: 'WHITEBOARD_ERROR', payload: message });
+      const message =
+        error.response?.data?.message || "Failed to remove collaborator";
+      dispatch({ type: "WHITEBOARD_ERROR", payload: message });
     }
   };
 
-  // Clear error
+  // Clear error and reset retry count
   const clearError = () => {
-    dispatch({ type: 'CLEAR_ERROR' });
+    errorRetryCount.current = 0;
+    dispatch({ type: "CLEAR_ERROR" });
   };
 
   return (
@@ -210,7 +268,7 @@ export const WhiteboardProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 export const useWhiteboard = (): WhiteboardContextType => {
   const context = useContext(WhiteboardContext);
   if (context === undefined) {
-    throw new Error('useWhiteboard must be used within a WhiteboardProvider');
+    throw new Error("useWhiteboard must be used within a WhiteboardProvider");
   }
   return context;
 };
