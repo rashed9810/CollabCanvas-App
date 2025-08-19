@@ -1,9 +1,10 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWhiteboard } from "../context/WhiteboardContext";
 import WhiteboardList from "../components/WhiteboardList";
 import NewWhiteboardForm from "../components/NewWhiteboardForm";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -18,19 +19,18 @@ const DashboardPage: React.FC = () => {
   } = useWhiteboard();
   const navigate = useNavigate();
 
-  // Wrap getWhiteboards in useCallback to prevent infinite loops
-  const fetchWhiteboards = useCallback(() => {
-    getWhiteboards();
-  }, []); // Remove getWhiteboards from dependencies to prevent infinite loop
-
+  // Fetch whiteboards on mount
   useEffect(() => {
-    fetchWhiteboards();
+    // Only fetch if we don't have whiteboards or if there's an error
+    if (whiteboards.length === 0 && !loading && !error) {
+      getWhiteboards();
+    }
 
     // Cleanup function
     return () => {
       clearError();
     };
-  }, []); // Remove fetchWhiteboards and clearError from dependencies
+  }, []); // Empty dependency array - only run on mount
 
   const handleCreateWhiteboard = async (name: string, isPublic: boolean) => {
     try {
@@ -99,18 +99,37 @@ const DashboardPage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-900">
                   Your Whiteboards
                 </h2>
-                <div className="text-sm text-gray-500">
-                  {whiteboards.length} whiteboard
-                  {whiteboards.length !== 1 ? "s" : ""}
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => getWhiteboards()}
+                    disabled={loading}
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                    title="Refresh whiteboards"
+                  >
+                    <svg
+                      className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </button>
+                  <div className="text-sm text-gray-500">
+                    {whiteboards.length} whiteboard
+                    {whiteboards.length !== 1 ? "s" : ""}
+                  </div>
                 </div>
               </div>
 
               {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                  <span className="ml-3 text-gray-600">
-                    Loading whiteboards...
-                  </span>
+                <div className="py-12">
+                  <LoadingSpinner size="lg" text="Loading whiteboards..." />
                 </div>
               ) : whiteboards.length === 0 ? (
                 <div className="text-center py-12">

@@ -95,7 +95,7 @@ export const getWhiteboards = async (
       "Cache-Control": "private, max-age=30", // Cache for 30 seconds
       Expires: new Date(Date.now() + 30000).toUTCString(),
     });
-
+   
     res.json(whiteboards);
   } catch (error) {
     console.error("Error fetching whiteboards:", error);

@@ -33,6 +33,7 @@ const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    clearError();
 
     // Validate form
     if (!name || !email || !password || !confirmPassword) {
@@ -50,10 +51,23 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setFormError("Please enter a valid email address");
+      return;
+    }
+
     try {
       await register(name, email, password);
-    } catch {
-      // Error is handled in auth context
+    } catch (error: any) {
+      // Handle specific errors at component level if needed
+      if (error.message === "User already exists") {
+        setFormError(
+          "An account with this email already exists. Please use a different email or try logging in."
+        );
+      }
+      // Other errors are handled by the auth context
     }
   };
 
@@ -119,22 +133,32 @@ const RegisterPage: React.FC = () => {
         {/* Form Body */}
         <div className="p-8">
           {formError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center text-red-700">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5 mr-3 flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span className="text-sm">{formError}</span>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center text-red-700 mb-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5 mr-3 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span className="text-sm">{formError}</span>
+              </div>
+              {formError.includes("already exists") && (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="text-sm text-purple-700 hover:text-purple-800 font-medium hover:underline transition-colors duration-200"
+                >
+                  Go to Login Page →
+                </button>
+              )}
             </div>
           )}
 

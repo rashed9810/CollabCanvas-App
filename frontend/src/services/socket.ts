@@ -54,7 +54,7 @@ class SocketService {
       return;
     }
 
-    this.socket.emit("draw", data);
+    this.socket.emit("draw-event", data);
   }
 
   // Send cursor position
@@ -66,7 +66,7 @@ class SocketService {
       return;
     }
 
-    this.socket.emit("cursor-move", data);
+    this.socket.emit("cursor-position", data);
   }
 
   // Listen for drawing events
@@ -76,9 +76,9 @@ class SocketService {
       return () => {};
     }
 
-    this.socket.on("draw", callback);
+    this.socket.on("draw-event", callback);
     return () => {
-      this.socket?.off("draw", callback);
+      this.socket?.off("draw-event", callback);
     };
   }
 
@@ -185,6 +185,81 @@ class SocketService {
     this.socket.on("chat-message", callback);
     return () => {
       this.socket?.off("chat-message", callback);
+    };
+  }
+
+  // Send poll created event
+  sendPollCreated(data: { roomId: string; poll: any }): void {
+    if (!this.socket) {
+      console.error("Socket not connected");
+      return;
+    }
+
+    this.socket.emit("poll-created", data);
+  }
+
+  // Send poll vote cast event
+  sendPollVoteCast(data: { roomId: string; pollId: string }): void {
+    if (!this.socket) {
+      console.error("Socket not connected");
+      return;
+    }
+
+    this.socket.emit("poll-vote-cast", data);
+  }
+
+  // Send poll closed event
+  sendPollClosed(data: { roomId: string; pollId: string }): void {
+    if (!this.socket) {
+      console.error("Socket not connected");
+      return;
+    }
+
+    this.socket.emit("poll-closed", data);
+  }
+
+  // Listen for poll created events
+  onPollCreated(
+    callback: (data: { poll: any; createdBy: string }) => void
+  ): () => void {
+    if (!this.socket) {
+      console.error("Socket not connected");
+      return () => {};
+    }
+
+    this.socket.on("poll-created", callback);
+    return () => {
+      this.socket?.off("poll-created", callback);
+    };
+  }
+
+  // Listen for poll vote cast events
+  onPollVoteCast(
+    callback: (data: { pollId: string; votedBy: string }) => void
+  ): () => void {
+    if (!this.socket) {
+      console.error("Socket not connected");
+      return () => {};
+    }
+
+    this.socket.on("poll-vote-cast", callback);
+    return () => {
+      this.socket?.off("poll-vote-cast", callback);
+    };
+  }
+
+  // Listen for poll closed events
+  onPollClosed(
+    callback: (data: { pollId: string; closedBy: string }) => void
+  ): () => void {
+    if (!this.socket) {
+      console.error("Socket not connected");
+      return () => {};
+    }
+
+    this.socket.on("poll-closed", callback);
+    return () => {
+      this.socket?.off("poll-closed", callback);
     };
   }
 

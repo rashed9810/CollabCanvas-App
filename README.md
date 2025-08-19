@@ -5,33 +5,53 @@ A modern, real-time collaborative whiteboard application built with React, Node.
 ## 🚀 Features
 
 ### Core Functionality
+
 - **Real-time Collaboration**: Multiple users can draw and edit simultaneously
-- **Live Cursor Tracking**: See other users' cursors in real-time
+- **Live Cursor Tracking**: See other users' cursors in real-time with names and colors
 - **Drawing Tools**: Pen, shapes (rectangle, circle), text, and selection tools
 - **Canvas Management**: Undo/redo, clear canvas, save/load functionality
-- **Export Options**: Export whiteboards as PNG images
+- **Export Options**: Export whiteboards as PNG images with custom filenames
 
 ### User Management
-- **Authentication**: Secure user registration and login
-- **User Profiles**: Personalized user accounts
+
+- **Authentication**: Secure user registration and login with comprehensive validation
+- **User Profiles**: Personalized user accounts with avatar support
 - **Session Management**: JWT-based authentication with HTTP-only cookies
+- **Error Handling**: Comprehensive error boundaries and user feedback
 
 ### Whiteboard Features
+
 - **Create & Manage**: Create new whiteboards and manage existing ones
 - **Privacy Controls**: Public and private whiteboard options
-- **Collaboration**: Add collaborators to whiteboards
-- **Persistent Storage**: Whiteboards are saved to MongoDB
+- **Collaboration**: Add/remove collaborators with email-based invitations
+- **Persistent Storage**: Whiteboards are saved to MongoDB with auto-save
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **User Presence**: See active users with colored avatars and real-time status
 
 ### Real-time Features
-- **Socket.io Integration**: Real-time drawing synchronization
-- **Live Chat**: Built-in chat functionality for each whiteboard
-- **Cursor Presence**: See where other users are working
+
+- **Socket.io Integration**: Real-time drawing synchronization with conflict resolution
+- **Live Chat**: Built-in chat functionality for each whiteboard with message history
+- **Cursor Presence**: See where other users are working with live cursor tracking
 - **Instant Updates**: Changes appear immediately for all users
+- **Real-time Polls**: Create and participate in live polls within whiteboards
+
+### Advanced Features
+
+- **Interactive Polling System**:
+  - Create polls with multiple options and custom durations
+  - Real-time voting with live results
+  - Poll expiration and automatic closure
+  - Vote tracking and user participation history
+- **Keyboard Shortcuts**: Comprehensive keyboard shortcuts for all tools and actions
+- **Toast Notifications**: Real-time feedback for all user actions
+- **Loading States**: Professional loading indicators throughout the app
+- **Error Recovery**: Automatic retry mechanisms and graceful error handling
 
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **React 18** with TypeScript
 - **Material-UI (MUI)** for UI components
 - **Fabric.js** for canvas manipulation
@@ -42,6 +62,7 @@ A modern, real-time collaborative whiteboard application built with React, Node.
 - **Vite** for build tooling
 
 ### Backend
+
 - **Node.js** with Express.js
 - **TypeScript** for type safety
 - **Socket.io** for real-time communication
@@ -61,18 +82,21 @@ Before running this application, make sure you have the following installed:
 ## 🚀 Installation & Setup
 
 ### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd CollabCanvas-App
 ```
 
 ### 2. Backend Setup
+
 ```bash
 cd backend
 npm install
 ```
 
 Create a `.env` file in the backend directory:
+
 ```env
 NODE_ENV=development
 PORT=5000
@@ -82,13 +106,16 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 ### 3. Frontend Setup
+
 ```bash
 cd frontend
 npm install
 ```
 
 ### 4. Start MongoDB
+
 Make sure MongoDB is running on your system:
+
 ```bash
 # For local MongoDB installation
 mongod
@@ -99,22 +126,27 @@ mongod
 ### 5. Run the Application
 
 #### Start Backend (Terminal 1)
+
 ```bash
 cd backend
 npm run dev
 ```
+
 The backend will start on `http://localhost:5000`
 
 #### Start Frontend (Terminal 2)
+
 ```bash
 cd frontend
 npm run dev
 ```
+
 The frontend will start on `http://localhost:5173`
 
 ## 🎯 Usage
 
 ### Getting Started
+
 1. **Visit the Application**: Open `http://localhost:5173` in your browser
 2. **Create Account**: Register a new user account
 3. **Login**: Sign in with your credentials
@@ -122,6 +154,7 @@ The frontend will start on `http://localhost:5173`
 5. **Start Drawing**: Use the toolbar to select tools and start creating
 
 ### Drawing Tools
+
 - **Select Tool**: Move and resize objects
 - **Pen Tool**: Free-hand drawing
 - **Rectangle Tool**: Draw rectangles
@@ -129,12 +162,14 @@ The frontend will start on `http://localhost:5173`
 - **Text Tool**: Add text elements
 
 ### Collaboration
+
 - **Share Whiteboard**: Use the share button to copy the whiteboard link
 - **Real-time Updates**: Changes appear instantly for all users
 - **Live Cursors**: See where other users are working
 - **Chat**: Use the chat sidebar to communicate
 
 ### Keyboard Shortcuts
+
 - **Ctrl+Z**: Undo last action
 - **Ctrl+Y** or **Ctrl+Shift+Z**: Redo action
 - **Delete**: Remove selected objects
@@ -171,12 +206,14 @@ CollabCanvas-App/
 ## 🔧 API Endpoints
 
 ### Authentication
+
 - `POST /api/users` - Register new user
 - `POST /api/users/login` - User login
 - `POST /api/users/logout` - User logout
 - `GET /api/users/profile` - Get user profile
 
 ### Whiteboards
+
 - `GET /api/whiteboards` - Get user's whiteboards
 - `POST /api/whiteboards` - Create new whiteboard
 - `GET /api/whiteboards/:id` - Get specific whiteboard
@@ -185,26 +222,48 @@ CollabCanvas-App/
 - `POST /api/whiteboards/:id/collaborators` - Add collaborator
 - `DELETE /api/whiteboards/:id/collaborators/:userId` - Remove collaborator
 
+### Polls
+
+- `POST /api/polls/create` - Create new poll
+- `POST /api/polls/vote` - Cast vote in poll
+- `GET /api/polls/:id/results` - Get poll results
+- `GET /api/polls/whiteboard/:whiteboardId/active` - Get active polls for whiteboard
+- `PATCH /api/polls/:id/close` - Close poll
+
 ## 🔌 Socket.io Events
 
 ### Client to Server
+
 - `join-room` - Join a whiteboard room
 - `draw-event` - Send drawing data
 - `cursor-position` - Send cursor position
+- `chat-message` - Send chat message
+- `poll-created` - Notify poll creation
+- `poll-vote-cast` - Notify vote cast
+- `poll-closed` - Notify poll closure
 
 ### Server to Client
+
 - `draw-event` - Receive drawing data
 - `cursor-move` - Receive cursor positions
 - `canvas-data` - Receive full canvas data
+- `chat-message` - Receive chat messages
+- `user-joined` - User joined notification
+- `user-left` - User left notification
+- `poll-created` - New poll notification
+- `poll-vote-cast` - Vote cast notification
+- `poll-closed` - Poll closed notification
 
 ## 🎨 Customization
 
 ### Adding New Drawing Tools
+
 1. Add the tool type to the `useCanvas` hook
 2. Implement the tool logic in the mouse event handlers
 3. Add the tool button to the `WhiteboardToolbar` component
 
 ### Styling
+
 - The application uses Tailwind CSS for utility-first styling
 - Material-UI components can be customized using the theme system
 - Custom styles are in component-specific CSS files
@@ -212,7 +271,9 @@ CollabCanvas-App/
 ## 🚀 Deployment
 
 ### Backend Deployment
+
 1. Build the TypeScript code:
+
 ```bash
 cd backend
 npm run build
@@ -222,7 +283,9 @@ npm run build
 3. Deploy to your preferred platform (Heroku, AWS, etc.)
 
 ### Frontend Deployment
+
 1. Build the React application:
+
 ```bash
 cd frontend
 npm run build
@@ -231,6 +294,7 @@ npm run build
 2. Deploy the `dist` folder to a static hosting service (Netlify, Vercel, etc.)
 
 ### Environment Variables for Production
+
 ```env
 NODE_ENV=production
 PORT=5000
@@ -244,10 +308,12 @@ FRONTEND_URL=your-production-frontend-url
 ### Common Issues
 
 1. **MongoDB Connection Error**
+
    - Ensure MongoDB is running
    - Check the connection string in `.env`
 
 2. **Socket.io Connection Issues**
+
    - Verify CORS settings
    - Check firewall settings
 
@@ -256,6 +322,7 @@ FRONTEND_URL=your-production-frontend-url
    - Check TypeScript configuration
 
 ### Performance Optimization
+
 - Use MongoDB indexes for better query performance
 - Implement canvas object pooling for large drawings
 - Add compression for socket.io messages
@@ -282,6 +349,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 If you encounter any issues or have questions, please:
+
 1. Check the troubleshooting section
 2. Search existing issues on GitHub
 3. Create a new issue with detailed information

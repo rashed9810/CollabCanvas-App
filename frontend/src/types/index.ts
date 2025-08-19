@@ -87,3 +87,6 @@ export interface WhiteboardContextType extends WhiteboardState {
   removeCollaborator: (whiteboardId: string, userId: string) => Promise<void>;
   clearError: () => void;
 }
+
+// Re-export poll types
+export * from "./poll";

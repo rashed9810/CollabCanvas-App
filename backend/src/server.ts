@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import userRoutes from "./routes/userRoutes";
 import whiteboardRoutes from "./routes/whiteboardRoutes";
+import pollRoutes from "./routes/pollRoutes";
 import { setupSocketHandlers } from "./services/socketService";
 
 // Load environment variables
@@ -81,6 +82,7 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/users", userRoutes);
 app.use("/api/whiteboards", whiteboardRoutes);
+app.use("/api/polls", pollRoutes);
 
 // 404 handler
 app.use((req, res) => {

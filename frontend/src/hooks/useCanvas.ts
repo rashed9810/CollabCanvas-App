@@ -679,8 +679,16 @@ const useCanvas = ({
     if (!isReady || readOnly) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
       // Undo: Ctrl+Z
-      if (e.ctrlKey && e.key === "z") {
+      if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
@@ -688,10 +696,49 @@ const useCanvas = ({
       // Redo: Ctrl+Y or Ctrl+Shift+Z
       if (
         (e.ctrlKey && e.key === "y") ||
-        (e.ctrlKey && e.shiftKey && e.key === "z")
+        (e.ctrlKey && e.shiftKey && e.key === "Z")
       ) {
         e.preventDefault();
         redo();
+      }
+
+      // Delete selected objects: Delete key
+      if (e.key === "Delete") {
+        e.preventDefault();
+        deleteSelectedObjects();
+      }
+
+      // Deselect all: Escape key
+      if (e.key === "Escape") {
+        e.preventDefault();
+        canvasRef.current?.discardActiveObject();
+        canvasRef.current?.renderAll();
+      }
+
+      // Tool shortcuts (only if no modifier keys)
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case "s":
+            e.preventDefault();
+            setActiveTool("select");
+            break;
+          case "p":
+            e.preventDefault();
+            setActiveTool("pen");
+            break;
+          case "r":
+            e.preventDefault();
+            setActiveTool("rect");
+            break;
+          case "c":
+            e.preventDefault();
+            setActiveTool("circle");
+            break;
+          case "t":
+            e.preventDefault();
+            setActiveTool("text");
+            break;
+        }
       }
     };
 
@@ -700,7 +747,7 @@ const useCanvas = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isReady, readOnly, undo, redo]);
+  }, [isReady, readOnly, undo, redo, deleteSelectedObjects, setActiveTool]);
 
   return {
     containerRef,

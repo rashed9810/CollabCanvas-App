@@ -104,6 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     try {
       dispatch({ type: "SET_LOADING", payload: true });
+      dispatch({ type: "CLEAR_ERROR" });
+
       const user = await authAPI.login(email, password);
       dispatch({ type: "LOGIN_SUCCESS", payload: user });
 
@@ -111,8 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // The backend handles token via HTTP-only cookie
       socketService.connect(user._id);
     } catch (error: any) {
-      const message = error.response?.data?.message || "Login failed";
+      const message = error.message || "Login failed";
       dispatch({ type: "AUTH_ERROR", payload: message });
+      throw error; // Re-throw to allow component-level handling if needed
     }
   };
 
@@ -120,6 +123,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (name: string, email: string, password: string) => {
     try {
       dispatch({ type: "SET_LOADING", payload: true });
+      dispatch({ type: "CLEAR_ERROR" });
+
       const user = await authAPI.register(name, email, password);
       dispatch({ type: "REGISTER_SUCCESS", payload: user });
 
@@ -127,8 +132,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // The backend handles token via HTTP-only cookie
       socketService.connect(user._id);
     } catch (error: any) {
-      const message = error.response?.data?.message || "Registration failed";
+      const message = error.message || "Registration failed";
       dispatch({ type: "AUTH_ERROR", payload: message });
+      throw error; // Re-throw to allow component-level handling if needed
     }
   };
 

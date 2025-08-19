@@ -10,8 +10,37 @@ export const registerUser = async (
   const { name, email, password } = req.body;
 
   try {
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Please provide name, email, and password" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid email address" });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long" });
+    }
+     
+    // Validate name length
+    if (name.trim().length < 2) {
+      return res
+        .status(400)
+        .json({ message: "Name must be at least 2 characters long" });
+    }
+
+    // Check if user already exists (case-insensitive)
+    const userExists = await User.findOne({ email: email.toLowerCase() });
 
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
@@ -19,8 +48,8 @@ export const registerUser = async (
 
     // Create new user
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase(),
       password,
     });
 
@@ -32,6 +61,7 @@ export const registerUser = async (
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
@@ -42,9 +72,22 @@ export const registerUser = async (
         avatar: user.avatar,
       });
     } else {
-      res.status(400).json({ message: "Invalid user data" });
+      res.status(400).json({ message: "Failed to create user" });
     }
-  } catch (error) {
+  } catch (error: any) {
+    // Handle mongoose validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map(
+        (err: any) => err.message
+      );
+      return res.status(400).json({ message: messages.join(", ") });
+    }
+
+    // Handle duplicate key error (in case unique index fails)
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
     next(error);
   }
 };
@@ -57,8 +100,23 @@ export const loginUser = async (
   const { email, password } = req.body;
 
   try {
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Validate required fields
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Please provide email and password" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid email address" });
+    }
+
+    // Find user by email (case-insensitive)
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
@@ -78,6 +136,7 @@ export const loginUser = async (
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 

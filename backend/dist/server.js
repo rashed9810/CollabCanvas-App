@@ -12,6 +12,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const whiteboardRoutes_1 = __importDefault(require("./routes/whiteboardRoutes"));
+const pollRoutes_1 = __importDefault(require("./routes/pollRoutes"));
 const socketService_1 = require("./services/socketService");
 // Load environment variables
 dotenv_1.default.config();
@@ -75,6 +76,7 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/users", userRoutes_1.default);
 app.use("/api/whiteboards", whiteboardRoutes_1.default);
+app.use("/api/polls", pollRoutes_1.default);
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ message: "Route not found" });

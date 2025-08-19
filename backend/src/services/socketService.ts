@@ -119,9 +119,9 @@ export const setupSocketHandlers = (io: Server) => {
     });
 
     // Handle drawing events
-    socket.on("draw", (data: DrawData) => {
+    socket.on("draw-event", (data: DrawData) => {
       // Broadcast to others in the room
-      socket.to(data.roomId).emit("draw", {
+      socket.to(data.roomId).emit("draw-event", {
         ...data,
         userId: user._id,
         userName: user.name,
@@ -132,7 +132,7 @@ export const setupSocketHandlers = (io: Server) => {
     });
 
     // Handle cursor movement
-    socket.on("cursor-move", (data: CursorData) => {
+    socket.on("cursor-position", (data: CursorData) => {
       socket.to(data.roomId).emit("cursor-move", {
         ...data,
         userId: user._id,
@@ -167,6 +167,134 @@ export const setupSocketHandlers = (io: Server) => {
       io.to(data.roomId).emit("chat-message", messageData);
 
       // TODO: Store chat messages in database if needed
+    });
+
+    // Handle poll events
+    socket.on("poll-created", (data: { roomId: string; poll: any }) => {
+      // Broadcast new poll to all users in the room
+      socket.to(data.roomId).emit("poll-created", {
+        poll: data.poll,
+        createdBy: user.name,
+      });
+    });
+
+    socket.on("poll-vote-cast", (data: { roomId: string; pollId: string }) => {
+      // Broadcast vote update to all users in the room
+      socket.to(data.roomId).emit("poll-vote-cast", {
+        pollId: data.pollId,
+        votedBy: user.name,
+      });
+    });
+
+    socket.on("poll-closed", (data: { roomId: string; pollId: string }) => {
+      // Broadcast poll closure to all users in the room
+      socket.to(data.roomId).emit("poll-closed", {
+        pollId: data.pollId,
+        closedBy: user.name,
+      });
+    });
+
+    // Handle poll events
+    interface PollCreatedData {
+      roomId: string;
+      poll: any;
+    }
+
+    interface VoteCastData {
+      roomId: string;
+      pollId: string;
+      optionIndex: number;
+      userId?: string;
+      userName?: string;
+    }
+
+    interface PollResultsData {
+      roomId: string;
+      pollId: string;
+      results: any;
+      totalVotes: number;
+    }
+
+    // Poll created event
+    socket.on("poll-created", (data: PollCreatedData) => {
+      // Validate data
+      if (!data.roomId || !data.poll) {
+        return socket.emit("error", { message: "Invalid poll data" });
+      }
+
+      // Broadcast poll creation to all clients in the room
+      socket.to(data.roomId).emit("poll-created", {
+        poll: data.poll,
+        createdBy: {
+          userId: user._id,
+          userName: user.name,
+        },
+      });
+
+      console.log(`Poll created in room ${data.roomId} by ${user.name}`);
+    });
+
+    // Vote cast event
+    socket.on("vote-cast", (data: VoteCastData) => {
+      // Validate data
+      if (!data.roomId || !data.pollId || data.optionIndex === undefined) {
+        return socket.emit("error", { message: "Invalid vote data" });
+      }
+
+      // Broadcast vote to all clients in the room (excluding sender)
+      socket.to(data.roomId).emit("vote-cast", {
+        pollId: data.pollId,
+        optionIndex: data.optionIndex,
+        userId: user._id,
+        userName: user.name,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log(
+        `Vote cast in room ${data.roomId} by ${user.name} for poll ${data.pollId}`
+      );
+    });
+
+    // Poll results updated event
+    socket.on("poll-results-updated", (data: PollResultsData) => {
+      // Validate data
+      if (!data.roomId || !data.pollId || !data.results) {
+        return socket.emit("error", { message: "Invalid poll results data" });
+      }
+
+      // Broadcast updated results to all clients in the room
+      io.to(data.roomId).emit("poll-results-updated", {
+        pollId: data.pollId,
+        results: data.results,
+        totalVotes: data.totalVotes,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log(
+        `Poll results updated for poll ${data.pollId} in room ${data.roomId}`
+      );
+    });
+
+    // Poll closed event
+    socket.on("poll-closed", (data: { roomId: string; pollId: string }) => {
+      // Validate data
+      if (!data.roomId || !data.pollId) {
+        return socket.emit("error", { message: "Invalid poll close data" });
+      }
+
+      // Broadcast poll closure to all clients in the room
+      io.to(data.roomId).emit("poll-closed", {
+        pollId: data.pollId,
+        closedBy: {
+          userId: user._id,
+          userName: user.name,
+        },
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log(
+        `Poll ${data.pollId} closed in room ${data.roomId} by ${user.name}`
+      );
     });
 
     // Handle disconnection

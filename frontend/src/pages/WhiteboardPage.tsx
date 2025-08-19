@@ -5,6 +5,15 @@ import { useWhiteboard } from "../context/WhiteboardContext";
 import useCanvas from "../hooks/useCanvas";
 import WhiteboardToolbar from "../components/WhiteboardToolbar";
 import ChatSidebar from "../components/ChatSidebar";
+import CollaboratorManager from "../components/CollaboratorManager";
+import UserPresence from "../components/UserPresence";
+import KeyboardShortcuts from "../components/KeyboardShortcuts";
+import PollModal from "../components/PollModal";
+import PollOverlay from "../components/PollOverlay";
+import { pollAPI } from "../services/pollAPI";
+import { Poll, CreatePollData, CastVoteData } from "../types/poll";
+import { useToast } from "../context/ToastContext";
+import socketService from "../services/socket";
 
 const WhiteboardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +28,11 @@ const WhiteboardPage: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
+  const [collaboratorManagerOpen, setCollaboratorManagerOpen] = useState(false);
+  const [pollModalOpen, setPollModalOpen] = useState(false);
+  const [activePolls, setActivePolls] = useState<Poll[]>([]);
+  const [currentPoll, setCurrentPoll] = useState<Poll | null>(null);
+  const { showToast } = useToast();
 
   // Initialize canvas hook
   const {
@@ -143,6 +157,129 @@ const WhiteboardPage: React.FC = () => {
   // Handle chat toggle
   const handleChatToggle = () => {
     setChatOpen((prev) => !prev);
+  };
+
+  // Handle collaborator manager
+  const handleOpenCollaboratorManager = () => {
+    setCollaboratorManagerOpen(true);
+  };
+
+  const handleCloseCollaboratorManager = () => {
+    setCollaboratorManagerOpen(false);
+  };
+
+  const handleCollaboratorUpdate = (updatedWhiteboard: any) => {
+    // Update the current whiteboard in context
+    // This would typically be handled by the whiteboard context
+    setSnackbarMessage("Collaborators updated successfully");
+    setSnackbarOpen(true);
+    setTimeout(() => setSnackbarOpen(false), 3000);
+  };
+
+  // Load active polls and set up real-time updates
+  useEffect(() => {
+    if (!id) return;
+
+    const loadActivePolls = async () => {
+      try {
+        const response = await pollAPI.getActivePolls(id);
+        if (response.success) {
+          setActivePolls(response.polls);
+          // Show the first active poll if any
+          if (response.polls.length > 0 && !currentPoll) {
+            setCurrentPoll(response.polls[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load active polls:", error);
+      }
+    };
+
+    loadActivePolls();
+
+    // Set up real-time poll event listeners
+    const unsubscribePollCreated = socketService.onPollCreated((data) => {
+      setActivePolls((prev) => [...prev, data.poll]);
+      if (!currentPoll) {
+        setCurrentPoll(data.poll);
+      }
+      showToast(`New poll created by ${data.createdBy}`, "info");
+    });
+
+    const unsubscribePollVoteCast = socketService.onPollVoteCast((data) => {
+      // Refresh poll results when someone votes
+      if (currentPoll && currentPoll._id === data.pollId) {
+        loadActivePolls();
+      }
+    });
+
+    const unsubscribePollClosed = socketService.onPollClosed((data) => {
+      setActivePolls((prev) => prev.filter((poll) => poll._id !== data.pollId));
+      if (currentPoll && currentPoll._id === data.pollId) {
+        setCurrentPoll(null);
+      }
+      showToast(`Poll closed by ${data.closedBy}`, "info");
+    });
+
+    // Poll for updates every 30 seconds as backup
+    const interval = setInterval(loadActivePolls, 30000);
+
+    return () => {
+      clearInterval(interval);
+      unsubscribePollCreated();
+      unsubscribePollVoteCast();
+      unsubscribePollClosed();
+    };
+  }, [id, currentPoll, showToast]);
+
+  // Poll handlers
+  const handleCreatePoll = async (data: CreatePollData) => {
+    try {
+      const response = await pollAPI.createPoll(data);
+      if (response.success) {
+        setActivePolls((prev) => [...prev, response.poll]);
+        setCurrentPoll(response.poll);
+        showToast("Poll created successfully!", "success");
+
+        // Notify other users via socket
+        if (id) {
+          socketService.sendPollCreated({ roomId: id, poll: response.poll });
+        }
+      }
+    } catch (error: any) {
+      showToast(error.message || "Failed to create poll", "error");
+      throw error;
+    }
+  };
+
+  const handleCastVote = async (voteData: CastVoteData) => {
+    try {
+      const response = await pollAPI.castVote(voteData);
+      if (response.success) {
+        showToast("Vote cast successfully!", "success");
+
+        // Notify other users via socket
+        if (id) {
+          socketService.sendPollVoteCast({
+            roomId: id,
+            pollId: voteData.pollId,
+          });
+        }
+
+        // Refresh active polls
+        const pollsResponse = await pollAPI.getActivePolls(id!);
+        if (pollsResponse.success) {
+          setActivePolls(pollsResponse.polls);
+        }
+      }
+    } catch (error: any) {
+      showToast(error.message || "Failed to cast vote", "error");
+      throw error;
+    }
+  };
+
+  const handleClosePoll = () => {
+    setCurrentPoll(null);
   };
 
   if (loading) {
@@ -312,6 +449,46 @@ const WhiteboardPage: React.FC = () => {
           </button>
 
           <button
+            onClick={handleOpenCollaboratorManager}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Manage Collaborators"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+              />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setPollModalOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Create Poll"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+          </button>
+
+          <button
             onClick={handleOpenSaveDialog}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="Whiteboard Settings"
@@ -326,7 +503,13 @@ const WhiteboardPage: React.FC = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
           </button>
@@ -357,6 +540,12 @@ const WhiteboardPage: React.FC = () => {
           canUndo={canUndo}
           canRedo={canRedo}
         />
+
+        {/* User Presence */}
+        <UserPresence roomId={id || ""} />
+
+        {/* Keyboard Shortcuts */}
+        <KeyboardShortcuts />
       </div>
 
       {/* Settings Dialog */}
@@ -440,6 +629,34 @@ const WhiteboardPage: React.FC = () => {
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50">
           {snackbarMessage}
         </div>
+      )}
+
+      {/* Collaborator Manager */}
+      {collaboratorManagerOpen && currentWhiteboard && (
+        <CollaboratorManager
+          whiteboard={currentWhiteboard}
+          onUpdate={handleCollaboratorUpdate}
+          onClose={handleCloseCollaboratorManager}
+        />
+      )}
+
+      {/* Poll Modal */}
+      {pollModalOpen && id && (
+        <PollModal
+          isOpen={pollModalOpen}
+          onClose={() => setPollModalOpen(false)}
+          onCreatePoll={handleCreatePoll}
+          whiteboardId={id}
+        />
+      )}
+
+      {/* Poll Overlay */}
+      {currentPoll && (
+        <PollOverlay
+          poll={currentPoll}
+          onClose={handleClosePoll}
+          onVote={handleCastVote}
+        />
       )}
 
       {/* Chat Sidebar */}

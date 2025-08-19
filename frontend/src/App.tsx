@@ -7,6 +7,8 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { WhiteboardProvider } from "./context/WhiteboardContext";
+import { ToastProvider } from "./context/ToastContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
@@ -30,28 +32,40 @@ const ContentWrapper: React.FC<{ children: React.ReactNode }> = ({
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <WhiteboardProvider>
-        <Router>
-          <div className="min-h-screen flex flex-col bg-gray-50">
-            <Navbar />
-            <ContentWrapper>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthProvider>
+          <WhiteboardProvider>
+            <Router
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
+              <div className="min-h-screen flex flex-col bg-gray-50">
+                <Navbar />
+                <ContentWrapper>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
 
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/whiteboard/:id" element={<WhiteboardPage />} />
-                </Route>
-              </Routes>
-            </ContentWrapper>
-          </div>
-        </Router>
-      </WhiteboardProvider>
-    </AuthProvider>
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/dashboard" element={<DashboardPage />} />
+                      <Route
+                        path="/whiteboard/:id"
+                        element={<WhiteboardPage />}
+                      />
+                    </Route>
+                  </Routes>
+                </ContentWrapper>
+              </div>
+            </Router>
+          </WhiteboardProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 
