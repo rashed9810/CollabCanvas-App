@@ -1,8 +1,8 @@
 # CollabCanvas - Real-Time Collaborative Whiteboard Application
 
-A modern, real-time collaborative whiteboard application built with React, Node.js, Socket.io, and Fabric.js. Create, share, and collaborate on whiteboards with multiple users in real-time.
+A modern, real-time collaborative whiteboard application built with React, Node.js, Socket.io, and Fabric.js. Create, share, and collaborate on whiteboards with multiple users in real time.
 
-## 🚀 Features
+## Features
 
 ### Core Functionality
 
@@ -48,7 +48,7 @@ A modern, real-time collaborative whiteboard application built with React, Node.
 - **Loading States**: Professional loading indicators throughout the app
 - **Error Recovery**: Automatic retry mechanisms and graceful error handling
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 
@@ -71,7 +71,7 @@ A modern, real-time collaborative whiteboard application built with React, Node.
 - **bcrypt** for password hashing
 - **CORS** for cross-origin requests
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before running this application, make sure you have the following installed:
 
@@ -79,7 +79,7 @@ Before running this application, make sure you have the following installed:
 - **npm** or **yarn**
 - **MongoDB** (local installation or MongoDB Atlas)
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### 1. Clone the Repository
 
@@ -143,7 +143,7 @@ npm run dev
 
 The frontend will start on `http://localhost:5173`
 
-## 🎯 Usage
+## Usage
 
 ### Getting Started
 
@@ -174,7 +174,7 @@ The frontend will start on `http://localhost:5173`
 - **Ctrl+Y** or **Ctrl+Shift+Z**: Redo action
 - **Delete**: Remove selected objects
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```
 CollabCanvas-App/
@@ -203,7 +203,7 @@ CollabCanvas-App/
 └── README.md
 ```
 
-## 🔧 API Endpoints
+##  API Endpoints
 
 ### Authentication
 
@@ -230,7 +230,7 @@ CollabCanvas-App/
 - `GET /api/polls/whiteboard/:whiteboardId/active` - Get active polls for whiteboard
 - `PATCH /api/polls/:id/close` - Close poll
 
-## 🔌 Socket.io Events
+##  Socket.io Events
 
 ### Client to Server
 
@@ -254,7 +254,7 @@ CollabCanvas-App/
 - `poll-vote-cast` - Vote cast notification
 - `poll-closed` - Poll closed notification
 
-## 🎨 Customization
+##  Customization
 
 ### Adding New Drawing Tools
 
@@ -268,7 +268,7 @@ CollabCanvas-App/
 - Material-UI components can be customized using the theme system
 - Custom styles are in component-specific CSS files
 
-## 🚀 Deployment
+##  Deployment
 
 ### Backend Deployment
 
@@ -303,7 +303,7 @@ JWT_SECRET=your-production-jwt-secret
 FRONTEND_URL=your-production-frontend-url
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -327,7 +327,7 @@ FRONTEND_URL=your-production-frontend-url
 - Implement canvas object pooling for large drawings
 - Add compression for socket.io messages
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -339,21 +339,11 @@ FRONTEND_URL=your-production-frontend-url
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Fabric.js** for the powerful canvas library
-- **Socket.io** for real-time communication
+- **Socket.io** for real time communication
 - **Material-UI** for the beautiful UI components
 - **MongoDB** for the flexible database solution
 
-## 📞 Support
 
-If you encounter any issues or have questions, please:
-
-1. Check the troubleshooting section
-2. Search existing issues on GitHub
-3. Create a new issue with detailed information
-
----
-
-**Happy Collaborating! 🎨✨**
