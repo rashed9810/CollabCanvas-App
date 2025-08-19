@@ -1,4 +1,4 @@
-# CollabCanvas - Real-Time Collaborative Whiteboard Application
+# CollabCanvas - Real Time Collaborative Whiteboard Application
 
 A modern, real-time collaborative whiteboard application built with React, Node.js, Socket.io, and Fabric.js. Create, share, and collaborate on whiteboards with multiple users in real time.
 
